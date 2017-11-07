@@ -1,0 +1,535 @@
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1
+
+
+                                	title	'Preliminary Z80 tests'
+                                
+                                ; prelim.z80 - Preliminary Z80 tests
+                                ; Copyright (C) 1994  Frank D. Cringle
+                                ;
+                                ; This program is free software; you can redistribute it and/or
+                                ; modify it under the terms of the GNU General Public License
+                                ; as published by the Free Software Foundation; either version 2
+                                ; of the License, or (at your option) any later version.
+                                ;
+                                ; This program is distributed in the hope that it will be useful,
+                                ; but WITHOUT ANY WARRANTY; without even the implied warranty of
+                                ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+                                ; GNU General Public License for more details.
+                                ;
+                                ; You should have received a copy of the GNU General Public License
+                                ; along with this program; if not, write to the Free Software
+                                ; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+                                
+                                
+                                ; These tests have two goals.  To start with, we assume the worst and
+                                ; successively test the instructions needed to continue testing.
+                                ; Then we try to test all instructions which cannot be handled by
+                                ; zexlax - the crc-based instruction exerciser.
+                                
+                                ; Initially errors are 'reported' by jumping to 0.  This should reboot
+                                ; cp/m, so if the program terminates without any output one of the
+                                ; early tests failed.  Later errors are reported by outputting an
+                                ; address via the bdos conout routine.  The address can be located in
+                                ; a listing of this program.
+                                
+                                ; If the program runs to completion it displays a suitable message.
+                                
+                                ;******************************************************************************
+                                ;
+                                ; Modified by Ian Bartholomew to run a preliminary test on an 8080 CPU
+                                ;
+                                ; Assemble using M80
+                                ;
+                                ;******************************************************************************
+                                
+                                	.8080
+  0000'                         	aseg
+                                	org	100h
+                                
+  0100    3E 01                 start:	mvi	a,1		; test simple compares and z/nz jumps
+  0102    FE 02                 	cpi	2
+  0104    CA 0000               	jz	0
+  0107    FE 01                 	cpi	1
+  0109    C2 0000               	jnz	0
+  010C    C3 0111               	jmp	lab0
+  010F    76                    	hlt			; emergency exit
+  0110    FF                    	db	0ffh
+                                	
+  0111    CD 0117               lab0:	call	lab2		; does a simple call work?
+  0114    C3 0000               lab1:	jmp	0		; fail
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-1
+
+
+                                	
+  0117    E1                    lab2:	pop	h		; check return address
+  0118    7C                    	mov	a,h
+  0119    FE 01                 	cpi	high lab1
+  011B    CA 0121               	jz	lab3
+  011E    C3 0000               	jmp	0
+  0121    7D                    lab3:	mov	a,l
+  0122    FE 14                 	cpi	low lab1
+  0124    CA 012A               	jz	lab4
+  0127    C3 0000               	jmp	0
+                                
+                                ; test presence and uniqueness of all machine registers
+                                ; (except ir)
+  012A    31 0399               lab4:	lxi	sp,regs1
+  012D    F1                    	pop	psw
+  012E    C1                    	pop	b
+  012F    D1                    	pop	d
+  0130    E1                    	pop	h
+  0131    31 03A9               	lxi	sp,regs2+8
+  0134    E5                    	push	h
+  0135    D5                    	push	d
+  0136    C5                    	push	b
+  0137    F5                    	push	psw
+                                
+  0000                          v	defl	0
+                                	rept	8
+                                	lda	regs2+v/2
+                                v	defl	v+2
+                                	cpi	v
+                                	jnz	0
+                                	endm
+  0138    3A 03A1         +     	lda	regs2+v/2
+  013B    FE 02           +     	cpi	v
+  013D    C2 0000         +     	jnz	0
+  0140    3A 03A2         +     	lda	regs2+v/2
+  0143    FE 04           +     	cpi	v
+  0145    C2 0000         +     	jnz	0
+  0148    3A 03A3         +     	lda	regs2+v/2
+  014B    FE 06           +     	cpi	v
+  014D    C2 0000         +     	jnz	0
+  0150    3A 03A4         +     	lda	regs2+v/2
+  0153    FE 08           +     	cpi	v
+  0155    C2 0000         +     	jnz	0
+  0158    3A 03A5         +     	lda	regs2+v/2
+  015B    FE 0A           +     	cpi	v
+  015D    C2 0000         +     	jnz	0
+  0160    3A 03A6         +     	lda	regs2+v/2
+  0163    FE 0C           +     	cpi	v
+  0165    C2 0000         +     	jnz	0
+  0168    3A 03A7         +     	lda	regs2+v/2
+  016B    FE 0E           +     	cpi	v
+  016D    C2 0000         +     	jnz	0
+  0170    3A 03A8         +     	lda	regs2+v/2
+  0173    FE 10           +     	cpi	v
+  0175    C2 0000         +     	jnz	0
+                                
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-2
+
+
+                                ; test access to memory via (hl)
+  0178    21 03A9               	lxi	h,hlval
+  017B    7E                    	mov	a,m
+  017C    FE A5                 	cpi	0a5h
+  017E    C2 0000               	jnz	0
+  0181    21 03AA               	lxi	h,hlval+1
+  0184    7E                    	mov	a,m
+  0185    FE 3C                 	cpi	03ch
+  0187    C2 0000               	jnz	0
+                                
+                                ; test unconditional return
+  018A    31 0500               	lxi	sp,stack
+  018D    21 0195               	lxi	h,reta
+  0190    E5                    	push	h
+  0191    C9                    	ret
+  0192    C3 0000               	jmp	0
+                                
+                                ; test instructions needed for hex output
+  0195    3E FF                 reta:	mvi	a,0ffh
+  0197    E6 0F                 	ani	0fh
+  0199    FE 0F                 	cpi	0fh
+  019B    C2 0000               	jnz	0
+  019E    3E 5A                 	mvi	a,05ah
+  01A0    E6 0F                 	ani	0fh
+  01A2    FE 0A                 	cpi	0ah
+  01A4    C2 0000               	jnz	0
+  01A7    0F                    	rrc
+  01A8    FE 05                 	cpi	05h
+  01AA    C2 0000               	jnz	0
+  01AD    0F                    	rrc
+  01AE    FE 82                 	cpi	82h
+  01B0    C2 0000               	jnz	0
+  01B3    0F                    	rrc
+  01B4    FE 41                 	cpi	41h
+  01B6    C2 0000               	jnz	0
+  01B9    0F                    	rrc
+  01BA    FE A0                 	cpi	0a0h
+  01BC    C2 0000               	jnz	0
+  01BF    21 1234               	lxi	h,01234h
+  01C2    E5                    	push	h
+  01C3    C1                    	pop	b
+  01C4    78                    	mov	a,b
+  01C5    FE 12                 	cpi	12h
+  01C7    C2 0000               	jnz	0
+  01CA    79                    	mov	a,c
+  01CB    FE 34                 	cpi	34h
+  01CD    C2 0000               	jnz	0
+                                	
+                                ; from now on we can report errors by displaying an address
+                                
+                                ; test conditional call, ret, jp, jr
+                                tcond	macro	flag,pcond,ncond,rel
+                                	lxi	h,&flag
+                                	push	h
+                                	pop	psw
+                                	c&pcond	lab1&pcond
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-3
+
+
+                                	jmp	error
+                                lab1&pcond:	pop	h
+                                	lxi	h,0d7h xor &flag
+                                	push	h
+                                	pop	psw
+                                	c&ncond	lab2&pcond
+                                	jmp	error
+                                lab2&pcond:	pop	h
+                                	lxi	h,lab3&pcond
+                                	push	h
+                                	lxi	h,&flag
+                                	push	h
+                                	pop	psw
+                                	r&pcond
+                                	call	error
+                                lab3&pcond:	lxi	h,lab4&pcond
+                                	push	h
+                                	lxi	h,0d7h xor &flag
+                                	push	h
+                                	pop	psw
+                                	r&ncond
+                                	call	error
+                                lab4&pcond:	lxi	h,&flag
+                                	push	h
+                                	pop	psw
+                                	j&pcond	lab5&pcond
+                                	call	error
+                                lab5&pcond:	lxi	h,0d7h xor &flag
+                                	push	h
+                                	pop	psw
+                                	j&ncond	lab6&pcond
+                                	call	error
+                                lab6&pcond:	
+                                	endm
+                                
+                                	tcond	1,c,nc,1
+  01D0    21 0001         +     	lxi	h,&1
+  01D3    E5              +     	push	h
+  01D4    F1              +     	pop	psw
+  01D5    DC 01DB         +     	c&c	lab1&c
+  01D8    C3 0352         +     	jmp	error
+  01DB    E1              +     lab1&c:	pop	h
+  01DC    21 00D6         +     	lxi	h,0d7h xor &1
+  01DF    E5              +     	push	h
+  01E0    F1              +     	pop	psw
+  01E1    D4 01E7         +     	c&nc	lab2&c
+  01E4    C3 0352         +     	jmp	error
+  01E7    E1              +     lab2&c:	pop	h
+  01E8    21 01F5         +     	lxi	h,lab3&c
+  01EB    E5              +     	push	h
+  01EC    21 0001         +     	lxi	h,&1
+  01EF    E5              +     	push	h
+  01F0    F1              +     	pop	psw
+  01F1    D8              +     	r&c
+  01F2    CD 0352         +     	call	error
+  01F5    21 0202         +     lab3&c:	lxi	h,lab4&c
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-4
+
+
+  01F8    E5              +     	push	h
+  01F9    21 00D6         +     	lxi	h,0d7h xor &1
+  01FC    E5              +     	push	h
+  01FD    F1              +     	pop	psw
+  01FE    D0              +     	r&nc
+  01FF    CD 0352         +     	call	error
+  0202    21 0001         +     lab4&c:	lxi	h,&1
+  0205    E5              +     	push	h
+  0206    F1              +     	pop	psw
+  0207    DA 020D         +     	j&c	lab5&c
+  020A    CD 0352         +     	call	error
+  020D    21 00D6         +     lab5&c:	lxi	h,0d7h xor &1
+  0210    E5              +     	push	h
+  0211    F1              +     	pop	psw
+  0212    D2 0218         +     	j&nc	lab6&c
+  0215    CD 0352         +     	call	error
+  0218                    +     lab6&c:	
+                                	tcond	4,pe,po,0
+  0218    21 0004         +     	lxi	h,&4
+  021B    E5              +     	push	h
+  021C    F1              +     	pop	psw
+  021D    EC 0223         +     	c&pe	lab1&pe
+  0220    C3 0352         +     	jmp	error
+  0223    E1              +     lab1&pe:	pop	h
+  0224    21 00D3         +     	lxi	h,0d7h xor &4
+  0227    E5              +     	push	h
+  0228    F1              +     	pop	psw
+  0229    E4 022F         +     	c&po	lab2&pe
+  022C    C3 0352         +     	jmp	error
+  022F    E1              +     lab2&pe:	pop	h
+  0230    21 023D         +     	lxi	h,lab3&pe
+  0233    E5              +     	push	h
+  0234    21 0004         +     	lxi	h,&4
+  0237    E5              +     	push	h
+  0238    F1              +     	pop	psw
+  0239    E8              +     	r&pe
+  023A    CD 0352         +     	call	error
+  023D    21 024A         +     lab3&pe:	lxi	h,lab4&pe
+  0240    E5              +     	push	h
+  0241    21 00D3         +     	lxi	h,0d7h xor &4
+  0244    E5              +     	push	h
+  0245    F1              +     	pop	psw
+  0246    E0              +     	r&po
+  0247    CD 0352         +     	call	error
+  024A    21 0004         +     lab4&pe:	lxi	h,&4
+  024D    E5              +     	push	h
+  024E    F1              +     	pop	psw
+  024F    EA 0255         +     	j&pe	lab5&pe
+  0252    CD 0352         +     	call	error
+  0255    21 00D3         +     lab5&pe:	lxi	h,0d7h xor &4
+  0258    E5              +     	push	h
+  0259    F1              +     	pop	psw
+  025A    E2 0260         +     	j&po	lab6&pe
+  025D    CD 0352         +     	call	error
+  0260                    +     lab6&pe:	
+                                	tcond	040h,z,nz,1
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-5
+
+
+  0260    21 0040         +     	lxi	h,&040h
+  0263    E5              +     	push	h
+  0264    F1              +     	pop	psw
+  0265    CC 026B         +     	c&z	lab1&z
+  0268    C3 0352         +     	jmp	error
+  026B    E1              +     lab1&z:	pop	h
+  026C    21 0097         +     	lxi	h,0d7h xor &040h
+  026F    E5              +     	push	h
+  0270    F1              +     	pop	psw
+  0271    C4 0277         +     	c&nz	lab2&z
+  0274    C3 0352         +     	jmp	error
+  0277    E1              +     lab2&z:	pop	h
+  0278    21 0285         +     	lxi	h,lab3&z
+  027B    E5              +     	push	h
+  027C    21 0040         +     	lxi	h,&040h
+  027F    E5              +     	push	h
+  0280    F1              +     	pop	psw
+  0281    C8              +     	r&z
+  0282    CD 0352         +     	call	error
+  0285    21 0292         +     lab3&z:	lxi	h,lab4&z
+  0288    E5              +     	push	h
+  0289    21 0097         +     	lxi	h,0d7h xor &040h
+  028C    E5              +     	push	h
+  028D    F1              +     	pop	psw
+  028E    C0              +     	r&nz
+  028F    CD 0352         +     	call	error
+  0292    21 0040         +     lab4&z:	lxi	h,&040h
+  0295    E5              +     	push	h
+  0296    F1              +     	pop	psw
+  0297    CA 029D         +     	j&z	lab5&z
+  029A    CD 0352         +     	call	error
+  029D    21 0097         +     lab5&z:	lxi	h,0d7h xor &040h
+  02A0    E5              +     	push	h
+  02A1    F1              +     	pop	psw
+  02A2    C2 02A8         +     	j&nz	lab6&z
+  02A5    CD 0352         +     	call	error
+  02A8                    +     lab6&z:	
+                                	tcond	080h,m,p,0
+  02A8    21 0080         +     	lxi	h,&080h
+  02AB    E5              +     	push	h
+  02AC    F1              +     	pop	psw
+  02AD    FC 02B3         +     	c&m	lab1&m
+  02B0    C3 0352         +     	jmp	error
+  02B3    E1              +     lab1&m:	pop	h
+  02B4    21 0057         +     	lxi	h,0d7h xor &080h
+  02B7    E5              +     	push	h
+  02B8    F1              +     	pop	psw
+  02B9    F4 02BF         +     	c&p	lab2&m
+  02BC    C3 0352         +     	jmp	error
+  02BF    E1              +     lab2&m:	pop	h
+  02C0    21 02CD         +     	lxi	h,lab3&m
+  02C3    E5              +     	push	h
+  02C4    21 0080         +     	lxi	h,&080h
+  02C7    E5              +     	push	h
+  02C8    F1              +     	pop	psw
+  02C9    F8              +     	r&m
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-6
+
+
+  02CA    CD 0352         +     	call	error
+  02CD    21 02DA         +     lab3&m:	lxi	h,lab4&m
+  02D0    E5              +     	push	h
+  02D1    21 0057         +     	lxi	h,0d7h xor &080h
+  02D4    E5              +     	push	h
+  02D5    F1              +     	pop	psw
+  02D6    F0              +     	r&p
+  02D7    CD 0352         +     	call	error
+  02DA    21 0080         +     lab4&m:	lxi	h,&080h
+  02DD    E5              +     	push	h
+  02DE    F1              +     	pop	psw
+  02DF    FA 02E5         +     	j&m	lab5&m
+  02E2    CD 0352         +     	call	error
+  02E5    21 0057         +     lab5&m:	lxi	h,0d7h xor &080h
+  02E8    E5              +     	push	h
+  02E9    F1              +     	pop	psw
+  02EA    F2 02F0         +     	j&p	lab6&m
+  02ED    CD 0352         +     	call	error
+  02F0                    +     lab6&m:	
+                                
+                                ; test indirect jumps
+  02F0    21 02F7               	lxi	h,lab7
+  02F3    E9                    	pchl
+  02F4    CD 0352               	call	error
+                                
+                                ; djnz (and (partially) inc a, inc hl)
+  02F7    3E A5                 lab7:	mvi	a,0a5h
+  02F9    06 04                 	mvi	b,4
+  02FB    0F                    lab8:	rrc
+  02FC    05                    	dcr	b
+  02FD    C2 02FB               	jnz	lab8
+  0300    FE 5A                 	cpi	05ah
+  0302    C4 0352               	cnz	error
+  0305    06 10                 	mvi	b,16
+  0307    3C                    lab9:	inr	a
+  0308    05                    	dcr	b
+  0309    C2 0307               	jnz	lab9
+  030C    FE 6A                 	cpi	06ah
+  030E    C4 0352               	cnz	error
+  0311    06 00                 	mvi	b,0
+  0313    21 0000               	lxi	h,0
+  0316    23                    lab10:	inx	h
+  0317    05                    	dcr	b
+  0318    C2 0316               	jnz	lab10
+  031B    7C                    	mov	a,h
+  031C    FE 01                 	cpi	1
+  031E    C4 0352               	cnz	error
+  0321    7D                    	mov	a,l
+  0322    FE 00                 	cpi	0
+  0324    C4 0352               	cnz	error
+                                	
+  0327    11 0332               allok:	lxi	d,okmsg
+  032A    0E 09                 	mvi	c,9
+  032C    CD 0005               	call	5
+  032F    C3 0000               	jmp	0
+                                
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-7
+
+
+  0332    38 30 38 30           okmsg:	db	'8080 Preliminary tests complete$'
+  0336    20 50 72 65           
+  033A    6C 69 6D 69           
+  033E    6E 61 72 79           
+  0342    20 74 65 73           
+  0346    74 73 20 63           
+  034A    6F 6D 70 6C           
+  034E    65 74 65 24           
+                                	
+                                ; display address at top of stack and exit
+  0352    C1                    error:	pop	b
+  0353    26 04                 	mvi	h,high hextab
+  0355    78                    	mov	a,b
+  0356    0F                    	rrc
+  0357    0F                    	rrc
+  0358    0F                    	rrc
+  0359    0F                    	rrc
+  035A    E6 0F                 	ani	15
+  035C    6F                    	mov	l,a
+  035D    7E                    	mov	a,m
+  035E    CD 038A               	call	conout
+  0361    78                    	mov	a,b
+  0362    E6 0F                 	ani	15
+  0364    6F                    	mov	l,a
+  0365    7E                    	mov	a,m
+  0366    CD 038A               	call	conout
+  0369    79                    	mov	a,c
+  036A    0F                    	rrc
+  036B    0F                    	rrc
+  036C    0F                    	rrc
+  036D    0F                    	rrc
+  036E    E6 0F                 	ani	15
+  0370    6F                    	mov	l,a
+  0371    7E                    	mov	a,m
+  0372    CD 038A               	call	conout
+  0375    79                    	mov	a,c
+  0376    E6 0F                 	ani	15
+  0378    6F                    	mov	l,a
+  0379    7E                    	mov	a,m
+  037A    CD 038A               	call	conout
+  037D    3E 0D                 	mvi	a,13
+  037F    CD 038A               	call	conout
+  0382    3E 0A                 	mvi	a,10
+  0384    CD 038A               	call	conout
+  0387    C3 0000               	jmp	0
+                                
+  038A    F5                    conout:	push	psw
+  038B    C5                    	push	b
+  038C    D5                    	push	d
+  038D    E5                    	push	h
+  038E    0E 02                 	mvi	c,2
+  0390    5F                    	mov	e,a
+  0391    CD 0005               	call	5
+  0394    E1                    	pop	h
+  0395    D1                    	pop	d
+  0396    C1                    	pop	b
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	1-8
+
+
+  0397    F1                    	pop	psw
+  0398    C9                    	ret
+                                	
+  0000                          v	defl	0
+  0399                          regs1:	rept	8
+                                v	defl	v+2
+                                	db	v
+                                	endm
+  0399    02              +     	db	v
+  039A    04              +     	db	v
+  039B    06              +     	db	v
+  039C    08              +     	db	v
+  039D    0A              +     	db	v
+  039E    0C              +     	db	v
+  039F    0E              +     	db	v
+  03A0    10              +     	db	v
+                                
+  03A1                          regs2:	ds	8,0
+                                
+  03A9    A5 3C                 hlval:	db	0a5h,03ch
+                                
+                                ; skip to next page boundary
+                                	org	(($+255)/256)*256
+  0400    30 31 32 33           hextab:	db	'0123456789abcdef'
+  0404    34 35 36 37           
+  0408    38 39 61 62           
+  040C    63 64 65 66           
+  0410                          	ds	240
+                                
+  0500                          stack	equ	$
+                                
+                                	end	start
+'Preliminary Z80 tests'	MACRO-80 3.44	09-Dec-81	PAGE	S
+
+
+Macros:
+TCOND           
+
+Symbols:
+0327 	ALLOK           038A 	CONOUT          0352 	ERROR           
+0400 	HEXTAB          03A9 	HLVAL           0111 	LAB0            
+0114 	LAB1            0316 	LAB10           01DB 	LAB1C           
+02B3 	LAB1M           0223 	LAB1PE          026B 	LAB1Z           
+0117 	LAB2            01E7 	LAB2C           02BF 	LAB2M           
+022F 	LAB2PE          0277 	LAB2Z           0121 	LAB3            
+01F5 	LAB3C           02CD 	LAB3M           023D 	LAB3PE          
+0285 	LAB3Z           012A 	LAB4            0202 	LAB4C           
+02DA 	LAB4M           024A 	LAB4PE          0292 	LAB4Z           
+020D 	LAB5C           02E5 	LAB5M           0255 	LAB5PE          
+029D 	LAB5Z           0218 	LAB6C           02F0 	LAB6M           
+0260 	LAB6PE          02A8 	LAB6Z           02F7 	LAB7            
+02FB 	LAB8            0307 	LAB9            0332 	OKMSG           
+0399 	REGS1           03A1 	REGS2           0195 	RETA            
+0500 	STACK           0100 	START           0010 	V               
+
+
+
+No Fatal error(s)
+
+

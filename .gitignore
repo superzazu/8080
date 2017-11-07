@@ -1,0 +1,5 @@
+.DS_Store
+*.o
+i8080_tests
+cpm
+cpu_tests/sunhillow

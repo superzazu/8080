@@ -13,7 +13,7 @@ You can run the tests by running `make && ./i8080_tests`. The emulator passes th
 - [x] TST8080.COM
 - [x] CPUTEST.COM
 - [x] 8080PRE.COM
-- [x] 8080EX1.COM
+- [x] 8080EXM.COM
 
 The test roms (`cpu_tests` folder) are taken from [here](http://altairclone.com/downloads/cpu_tests/) and take approximately 40 seconds on my computer (MacBook Pro mid-2014) to run.
 

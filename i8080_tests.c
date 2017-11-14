@@ -52,6 +52,7 @@ static int load_file_into_memory(const char* filename, const u16 addr) {
         memory[addr + i] = buffer[i];
     }
 
+    fclose(f);
     return 0;
 }
 

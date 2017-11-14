@@ -387,7 +387,7 @@ void i8080_debug_output(i8080* const c) {
            i8080_rb(c, c->pc + 2));
 
     // disassembly of the current opcode
-    // printf(" - %s", DISASSEMBLE_TABLE[i8080_rb(c, c->pc)]);
+    printf(" - %s", DISASSEMBLE_TABLE[i8080_rb(c, c->pc)]);
 
     printf("\n================================");
     printf("==============================\n");
@@ -634,10 +634,6 @@ void i8080_cond_jmp(i8080* const c, const bool condition) {
     const u16 addr = i8080_next_word(c);
     if (condition) {
         c->pc = addr;
-        c->cyc += 15;
-    }
-    else {
-        c->cyc += 10;
     }
 }
 
@@ -652,7 +648,7 @@ void i8080_cond_call(i8080* const c, const bool condition) {
     const u16 addr = i8080_next_word(c);
     if (condition) {
         i8080_call(c, addr);
-        c->cyc += 18;
+        c->cyc += 17;
     }
     else {
         c->cyc += 11;

@@ -1,7 +1,7 @@
 TARGET = i8080_tests
 LIBS =
-CC = clang
-CFLAGS = -g -Wall -O3
+CC = cc
+CFLAGS = -g -Wall -Wextra -O3 -std=c11 -pedantic
 .PHONY: default all clean
 
 default: $(TARGET)

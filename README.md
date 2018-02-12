@@ -2,9 +2,9 @@
 
 8080 is a complete emulation of the Intel 8080 processor written in C. Its goals are:
 
-- accuracy
+- accuracy: it passes all test roms at my disposal
 - readability
-- portability
+- portability: tested on debian 8 with gcc 5 and macOS 10.12-10.13 with clang
 
 # Running tests
 
@@ -17,7 +17,7 @@ You can run the tests by running `make && ./i8080_tests`. The emulator passes th
 
 The test roms (`cpu_tests` folder) are taken from [here](http://altairclone.com/downloads/cpu_tests/) and take approximately 40 seconds on my computer (MacBook Pro mid-2014) to run.
 
-The output is as follows:
+The standard output is as follows:
 
 ```
 *******************

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "types.h"
 #include "i8080.h"
 
 // memory callbacks
@@ -20,7 +19,7 @@ static void wb(const u16 addr, const u8 val) {
 
 static int load_file_into_memory(const char* filename, const u16 addr) {
     FILE *f;
-    long file_size = 0;
+    size_t file_size = 0;
 
     f = fopen(filename, "rb");
     if (f == NULL) {
@@ -48,7 +47,7 @@ static int load_file_into_memory(const char* filename, const u16 addr) {
     }
 
     // copy buffer to memory
-    for (int i = 0; i < file_size; i++) {
+    for (size_t i = 0; i < file_size; i++) {
         memory[addr + i] = buffer[i];
     }
 
@@ -56,12 +55,12 @@ static int load_file_into_memory(const char* filename, const u16 addr) {
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main() {
     i8080 cpu;
     cpu.read_byte = rb;
     cpu.write_byte = wb;
 
-    time_t start, end;
+    time_t start = 0, end = 0;
     time(&start);
 
     i8080_init(&cpu);

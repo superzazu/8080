@@ -6,7 +6,7 @@
 - readability
 - portability: tested on debian 8 with gcc 5 and macOS 10.12-10.13 with clang
 
-# Running tests
+## Running tests
 
 You can run the tests by running `make && ./i8080_tests`. The emulator passes the following tests:
 
@@ -77,7 +77,7 @@ Jumped to 0x0000 from 0x0137
 Executed in 37.00s.
 ```
 
-# Resources used
+## Resources used
 
 - [CPU instructions](http://nemesis.lonestar.org/computers/tandy/software/apps/m4/qd/opcodes.html) and [this table](http://www.pastraiser.com/cpu/i8080/i8080_opcodes.html)
 - [MAME source code](https://github.com/mamedev/mame/blob/6c0fdfc5257ca20555fbc527203710d5af5401d1/src/devices/cpu/i8085/i8085.cpp)

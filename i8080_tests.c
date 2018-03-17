@@ -9,11 +9,11 @@
 // memory callbacks
 static u8 memory[0x10000] = {0};
 
-static u8 rb(const u16 addr) {
+static u8 rb(void* userdata, const u16 addr) {
     return memory[addr];
 }
 
-static void wb(const u16 addr, const u8 val) {
+static void wb(void* userdata, const u16 addr, const u8 val) {
     memory[addr] = val;
 }
 
@@ -59,6 +59,7 @@ int main() {
     i8080 cpu;
     cpu.read_byte = rb;
     cpu.write_byte = wb;
+    cpu.userdata = NULL;
 
     time_t start = 0, end = 0;
     time(&start);

@@ -20,12 +20,15 @@ typedef struct i8080 {
     u32 cyc; // cycles count
 
     // function pointers to access memory
-    u8 (*read_byte)(u16);
-    void (*write_byte)(u16, u8);
+    void* userdata; // general purpose pointer for the user
+    u8 (*read_byte)(void*, u16);
+    void (*write_byte)(void*, u16, u8);
 } i8080;
 
 void i8080_init(i8080* const c);
 void i8080_step(i8080* const c);
+void i8080_interrupt(i8080* const c, const u16 addr);
+
 void i8080_debug_output(i8080* const c);
 void i8080_run_testrom(i8080* const c);
 

@@ -1,24 +1,20 @@
-TARGET = i8080_tests
-LIBS =
+BIN = i8080_tests
 CC = cc
 CFLAGS = -g -Wall -Wextra -O3 -std=c11 -pedantic
-.PHONY: default all clean
-
-default: $(TARGET)
-all: default
+LDFLAGS =
 
 SOURCES = $(shell find . -name '*.c')
-HEADERS = $(shell find . -name '*.h')
-OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
+OBJECTS = $(SOURCES:.c=.o)
 
-%.o: %.c $(HEADERS)
+.PHONY: clean
+
+default: $(BIN)
+
+$(BIN): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $(BIN) $(OBJECTS) $(LDFLAGS)
+
+.c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-.PRECIOUS: $(TARGET) $(OBJECTS)
-
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
-
 clean:
-	-rm -f *.o
-	-rm -f $(TARGET)
+	rm -f $(BIN) *.o

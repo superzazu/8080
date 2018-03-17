@@ -479,6 +479,14 @@ void i8080_step(i8080* const c) {
     }
 }
 
+// services an interrupt (a simple CALL) if the iff is true
+void i8080_interrupt(i8080* const c, const u16 addr) {
+    if (c->iff) {
+        c->iff = 0;
+        i8080_call(c, addr);
+    }
+}
+
 // outputs a debug trace of the emulator state to the standard output,
 // including registers and flags
 void i8080_debug_output(i8080* const c) {
@@ -561,23 +569,24 @@ void i8080_run_testrom(i8080* const c) {
 
 // reads a byte from memory
 u8 i8080_rb(i8080* const c, const u16 addr) {
-    return c->read_byte(addr);
+    return c->read_byte(c->userdata, addr);
 }
 
 // writes a byte to memory
 void i8080_wb(i8080* const c, const u16 addr, const u8 val) {
-    c->write_byte(addr, val);
+    c->write_byte(c->userdata, addr, val);
 }
 
 // reads a word from memory
 u16 i8080_rw(i8080* const c, const u16 addr) {
-    return c->read_byte(addr + 1) << 8 | c->read_byte(addr);
+    return c->read_byte(c->userdata, addr + 1) << 8 |
+           c->read_byte(c->userdata, addr);
 }
 
 // writes a word to memory
 void i8080_ww(i8080* const c, const u16 addr, const u16 val) {
-    c->write_byte(addr, val & 0xFF);
-    c->write_byte(addr + 1, val >> 8);
+    c->write_byte(c->userdata, addr, val & 0xFF);
+    c->write_byte(c->userdata, addr + 1, val >> 8);
 }
 
 // returns the next byte in memory (and updates the program counter)

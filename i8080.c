@@ -56,8 +56,8 @@ static void i8080_xchg(i8080* const c);
 static void i8080_xthl(i8080* const c);
 
 // this array defines the number of cycles one opcode takes.
-// if the value is == 0, that means the cycles count is handled in the opcode
-// implementation
+// note that there are some special cases: conditional RETs and CALLs
+// add +6 cycles if the condition is met
 static const u8 OPCODES_CYCLES[] = {
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
     4,  10, 7,  5,  5,  5,  7,  4,  4,  10, 7,  5,  5,  5,  7,  4,  // 0
@@ -72,10 +72,10 @@ static const u8 OPCODES_CYCLES[] = {
     4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,  // 9
     4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,  // A
     4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,  // B
-    0,  10, 10, 10, 0,  11, 7,  11, 0,  10, 10, 10, 0,  17, 7,  11, // C
-    0,  10, 10, 10, 0,  11, 7,  11, 0,  10, 10, 10, 0,  17, 7,  11, // D
-    0,  10, 10, 18, 0,  11, 7,  11, 0,  5,  10, 5,  0,  17, 7,  11, // E
-    0,  10, 10, 4,  0,  11, 7,  11, 0,  5,  10, 4,  0,  17, 7,  11  // F
+    5,  10, 10, 10, 11, 11, 7,  11, 5,  10, 10, 10, 11, 11, 7,  11, // C
+    5,  10, 10, 10, 11, 11, 7,  11, 5,  10, 10, 10, 11, 11, 7,  11, // D
+    5,  10, 10, 18, 11, 11, 7,  11, 5,  5,  10, 5,  11, 11, 7,  11, // E
+    5,  10, 10, 4,  11, 11, 7,  11, 5,  5,  10, 4,  11, 11, 7,  11  // F
 };
 
 static const char* DISASSEMBLE_TABLE[] = {
@@ -484,6 +484,7 @@ void i8080_interrupt(i8080* const c, const u16 addr) {
     if (c->iff) {
         c->iff = 0;
         i8080_call(c, addr);
+        c->cyc += 11;
     }
 }
 
@@ -775,10 +776,7 @@ void i8080_cond_call(i8080* const c, const bool condition) {
     const u16 addr = i8080_next_word(c);
     if (condition) {
         i8080_call(c, addr);
-        c->cyc += 17;
-    }
-    else {
-        c->cyc += 11;
+        c->cyc += 6;
     }
 }
 
@@ -791,10 +789,7 @@ void i8080_ret(i8080* const c) {
 void i8080_cond_ret(i8080* const c, const bool condition) {
     if (condition) {
         i8080_ret(c);
-        c->cyc += 11;
-    }
-    else {
-        c->cyc += 5;
+        c->cyc += 6;
     }
 }
 

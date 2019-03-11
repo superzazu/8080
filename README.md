@@ -1,6 +1,6 @@
 # 8080
 
-8080 is a complete emulation of the Intel 8080 processor written in C. Its goals are:
+A complete emulation of the Intel 8080 processor written in C99. Goals:
 
 - accuracy: it passes all test roms at my disposal
 - readability

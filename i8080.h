@@ -26,6 +26,7 @@ typedef struct i8080 {
 } i8080;
 
 void i8080_init(i8080* const c);
+void i8080_reset(i8080* const c);
 void i8080_step(i8080* const c);
 void i8080_interrupt(i8080* const c, const u16 addr);
 

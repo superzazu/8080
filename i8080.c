@@ -118,8 +118,16 @@ static const char* DISASSEMBLE_TABLE[] = {
 
 // initialises the emulator with default values
 void i8080_init(i8080* const c) {
+    i8080_reset(c);
+    c->userdata = NULL;
+    c->read_byte = NULL;
+    c->write_byte = NULL;
+}
+
+void i8080_reset(i8080* const c) {
     c->pc = 0;
     c->sp = 0;
+
     c->a = 0;
     c->b = 0;
     c->c = 0;
@@ -127,12 +135,14 @@ void i8080_init(i8080* const c) {
     c->e = 0;
     c->h = 0;
     c->l = 0;
+
     c->s = false;
     c->z = false;
     c->hc = false;
     c->p = false;
     c->cy = false;
     c->iff = false;
+
     c->cyc = 0;
 }
 
@@ -556,6 +566,7 @@ void i8080_run_testrom(i8080* const c) {
         // uncomment following line to have a debug output of machine state
         // warning: will output multiple GB of data for the whole test suite
         // i8080_debug_output(c);
+
         i8080_step(c);
 
         if (c->pc == 0) {

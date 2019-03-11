@@ -2,12 +2,13 @@
 // directory). It uses a simple array as memory.
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "i8080.h"
 
 // memory callbacks
-static u8 memory[0x10000] = {0};
+static u8* memory;
 
 static u8 rb(void* userdata, const u16 addr) {
     return memory[addr];
@@ -18,18 +19,14 @@ static void wb(void* userdata, const u16 addr, const u8 val) {
 }
 
 static int load_file_into_memory(const char* filename, const u16 addr) {
-    FILE *f;
-    size_t file_size = 0;
-
-    f = fopen(filename, "rb");
+    FILE* f = fopen(filename, "rb");
     if (f == NULL) {
         fprintf(stderr, "error: can't open file '%s'\n", filename);
         return 1;
     }
 
-    // obtain file size
     fseek(f, 0, SEEK_END);
-    file_size = ftell(f);
+    size_t file_size = ftell(f);
     rewind(f);
 
     if (file_size > 0x10000) {
@@ -38,55 +35,55 @@ static int load_file_into_memory(const char* filename, const u16 addr) {
         return 1;
     }
 
-    // copy file data to buffer
-    u8 buffer[file_size];
-    size_t result = fread(buffer, 1, file_size, f);
+    size_t result = fread(&memory[addr], sizeof(u8), file_size, f);
     if (result != file_size) {
         fprintf(stderr, "error: while reading file '%s'\n", filename);
         return 1;
-    }
-
-    // copy buffer to memory
-    for (size_t i = 0; i < file_size; i++) {
-        memory[addr + i] = buffer[i];
     }
 
     fclose(f);
     return 0;
 }
 
-int main() {
+int main(void) {
+    memory = calloc(0x10000, sizeof(u8));
+    if (memory == NULL) {
+        return 1;
+    }
+
     i8080 cpu;
+    i8080_init(&cpu);
     cpu.read_byte = rb;
     cpu.write_byte = wb;
-    cpu.userdata = NULL;
 
     time_t start = 0, end = 0;
     time(&start);
 
-    i8080_init(&cpu);
-    memset(memory, 0, sizeof memory);
+    i8080_reset(&cpu);
+    memset(memory, 0, 0x10000);
     load_file_into_memory("cpu_tests/TST8080.COM", 0x100);
     i8080_run_testrom(&cpu);
 
-    i8080_init(&cpu);
-    memset(memory, 0, sizeof memory);
+    i8080_reset(&cpu);
+    memset(memory, 0, 0x10000);
     load_file_into_memory("cpu_tests/CPUTEST.COM", 0x100);
     i8080_run_testrom(&cpu);
 
-    i8080_init(&cpu);
-    memset(memory, 0, sizeof memory);
+    i8080_reset(&cpu);
+    memset(memory, 0, 0x10000);
     load_file_into_memory("cpu_tests/8080PRE.COM", 0x100);
     i8080_run_testrom(&cpu);
 
-    i8080_init(&cpu);
-    memset(memory, 0, sizeof memory);
+    i8080_reset(&cpu);
+    memset(memory, 0, 0x10000);
     load_file_into_memory("cpu_tests/8080EXM.COM", 0x100);
     i8080_run_testrom(&cpu);
 
     time(&end);
     double elapsed = difftime(end, start);
     printf("Executed in %.2lfs.", elapsed);
+
+    free(memory);
 
     return 0;
 }

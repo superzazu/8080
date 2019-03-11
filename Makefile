@@ -1,6 +1,6 @@
 BIN = i8080_tests
 CC = cc
-CFLAGS = -g -Wall -Wextra -O3 -std=c11 -pedantic
+CFLAGS = -g -Wall -Wextra -O3 -std=c99 -pedantic -Wno-gnu-binary-literal
 LDFLAGS =
 
 SOURCES = $(shell find . -name '*.c')

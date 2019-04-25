@@ -1,20 +1,16 @@
-BIN = i8080_tests
-CC = cc
-CFLAGS = -g -Wall -Wextra -O3 -std=c99 -pedantic -Wno-gnu-binary-literal
+bin = i8080_tests
+src = $(wildcard *.c)
+obj = $(src:.c=.o)
+
+CFLAGS = -g -Wall -Wextra -O2 -std=c99 -pedantic -Wno-gnu-binary-literal
 LDFLAGS =
 
-SOURCES = $(shell find . -name '*.c')
-OBJECTS = $(SOURCES:.c=.o)
+.PHONY: all clean
 
-.PHONY: clean
+all: $(bin)
 
-default: $(BIN)
-
-$(BIN): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $(BIN) $(OBJECTS) $(LDFLAGS)
-
-.c.o:
-	$(CC) $(CFLAGS) -c $< -o $@
+$(bin): $(obj)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f $(BIN) *.o
+	-rm $(bin) $(obj)

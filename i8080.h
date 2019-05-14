@@ -9,15 +9,14 @@ typedef uint8_t u8;
 typedef int8_t s8;
 typedef uint16_t u16;
 typedef int16_t s16;
-typedef uint32_t u32;
 
 typedef struct i8080 {
     u16 pc, sp; // program counter, stack pointer
     u8 a, b, c, d, e, h, l; // registers
-    bool s, z, hc, p, cy, iff; // flags: sign, zero, half-carry, parity, carry,
-                               //        interrupt flip-flop
+    bool sf, zf, hf, pf, cf, iff; // flags: sign, zero, half-carry, parity,
+                                  // carry, interrupt flip-flop
 
-    u32 cyc; // cycles count
+    int cyc; // cycle count
 
     // function pointers to access memory
     void* userdata; // general purpose pointer for the user

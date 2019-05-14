@@ -1,8 +1,7 @@
 bin = i8080_tests
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
-
-CFLAGS = -g -Wall -Wextra -O2 -std=c99 -pedantic -Wno-gnu-binary-literal
+CFLAGS = -g -Wall -Wextra -O2 -std=c99 -pedantic
 LDFLAGS =
 
 .PHONY: all clean

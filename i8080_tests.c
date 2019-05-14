@@ -11,10 +11,12 @@
 static u8* memory;
 
 static u8 rb(void* userdata, const u16 addr) {
+    (void) userdata;
     return memory[addr];
 }
 
 static void wb(void* userdata, const u16 addr, const u8 val) {
+    (void) userdata;
     memory[addr] = val;
 }
 
@@ -46,7 +48,7 @@ static int load_file_into_memory(const char* filename, const u16 addr) {
 }
 
 int main(void) {
-    memory = calloc(0x10000, sizeof(u8));
+    memory = malloc(0x10000 * sizeof(u8));
     if (memory == NULL) {
         return 1;
     }

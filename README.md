@@ -4,7 +4,7 @@ A complete emulation of the Intel 8080 processor written in C99. Goals:
 
 - accuracy: it passes all test roms at my disposal
 - readability
-- portability: tested on debian 8 with gcc 5 and macOS 10.12-10.13 with clang
+- portability: tested on debian 8 with gcc 5 and macOS 10.12+ with clang
 
 ## Running tests
 

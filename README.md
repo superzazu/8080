@@ -15,19 +15,19 @@ You can run the tests by running `make && ./i8080_tests`. The emulator passes th
 - [x] 8080PRE.COM
 - [x] 8080EXM.COM
 
-The test roms (`cpu_tests` folder) are taken from [here](http://altairclone.com/downloads/cpu_tests/) and take approximately 40 seconds on my computer (MacBook Pro mid-2014) to run.
+The test roms (`cpu_tests` folder) are taken from [here](http://altairclone.com/downloads/cpu_tests/) and take approximately 30 seconds on my computer (MacBook Pro mid-2014) to run.
 
 The standard output is as follows:
 
 ```
-*******************
+*** TEST: cpu_tests/TST8080.COM
 MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
  VERSION 1.0  (C) 1980
 
  CPU IS OPERATIONAL
-Jumped to 0x0000 from 0x06BA
+Jumped to 0x0000 from 0x06BA (4873 cycles)
 
-*******************
+*** TEST: cpu_tests/CPUTEST.COM
 
 DIAGNOSTICS II V1.2 - CPU TEST
 COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
@@ -38,13 +38,13 @@ BEGIN TIMING TEST
 END TIMING TEST
 CPU TESTS OK
 
-Jumped to 0x0000 from 0x3B25
+Jumped to 0x0000 from 0x3B25 (255573237 cycles)
 
-*******************
+*** TEST: cpu_tests/8080PRE.COM
 8080 Preliminary tests complete
-Jumped to 0x0000 from 0x032F
+Jumped to 0x0000 from 0x032F (7785 cycles)
 
-*******************
+*** TEST: cpu_tests/8080EXM.COM
 8080 instruction exerciser
 dad <b,d,h,sp>................  PASS! crc is:14474ba6
 aluop nn......................  PASS! crc is:9e922f9e
@@ -72,13 +72,12 @@ sta nnnn / lda nnnn...........  PASS! crc is:ed57af72
 <rlc,rrc,ral,rar>.............  PASS! crc is:e0d89235
 stax <b,d>....................  PASS! crc is:2b0471e9
 Tests complete
-Jumped to 0x0000 from 0x0137
+Jumped to 0x0000 from 0x0137 (2138633954 cycles)
 
-Executed in 37.00s.
 ```
 
 ## Resources used
 
 - [CPU instructions](http://nemesis.lonestar.org/computers/tandy/software/apps/m4/qd/opcodes.html) and [this table](http://www.pastraiser.com/cpu/i8080/i8080_opcodes.html)
-- [MAME source code](https://github.com/mamedev/mame/blob/6c0fdfc5257ca20555fbc527203710d5af5401d1/src/devices/cpu/i8085/i8085.cpp)
+- [MAME i8085](https://github.com/mamedev/mame/blob/6c0fdfc5257ca20555fbc527203710d5af5401d1/src/devices/cpu/i8085/i8085.cpp)
 - [thibaultimbert's Intel8080](https://github.com/thibaultimbert/Intel8080/blob/master/8080.js) and [begoon's i8080-js](https://github.com/begoon/i8080-js)

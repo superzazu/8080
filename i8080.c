@@ -371,13 +371,6 @@ static inline void i8080_xthl(i8080* const c) {
 
 // initialises the emulator with default values
 void i8080_init(i8080* const c) {
-    i8080_reset(c);
-    c->userdata = NULL;
-    c->read_byte = NULL;
-    c->write_byte = NULL;
-}
-
-void i8080_reset(i8080* const c) {
     c->pc = 0;
     c->sp = 0;
 
@@ -397,6 +390,10 @@ void i8080_reset(i8080* const c) {
     c->iff = 0;
 
     c->cyc = 0;
+
+    c->userdata = NULL;
+    c->read_byte = NULL;
+    c->write_byte = NULL;
 }
 
 // executes one opcode stored at the address pointed by the program counter
@@ -784,51 +781,6 @@ void i8080_debug_output(i8080* const c) {
     }
 
     printf("\n");
-}
-
-// runs the emulator in test mode, allowing it to output characters
-// to the standard output to see the results of the test
-// warning: before calling this function, you must have initialized the struct
-// beforehand and loaded a rom at 0x100
-void i8080_run_testrom(i8080* const c) {
-    c->pc = 0x100; // the test roms all start at 0x100
-    i8080_wb(c, 5, 0xC9); // inject RET at 0x5 to handle "CALL 5", needed
-                          // for the test roms
-
-    printf("*******************\n");
-    while (1) {
-        const u16 cur_pc = c->pc;
-
-        if (i8080_rb(c, c->pc) == 0x76) { // RET
-            printf("HLT at %04X\n", c->pc);
-        }
-
-        if (c->pc == 5) {
-            // prints characters stored in memory at (DE) until '$' is found
-            if (c->c == 9) {
-                u16 i = i8080_get_de(c);
-                do {
-                    printf("%c", i8080_rb(c, i));
-                    i += 1;
-                } while (i8080_rb(c, i) != '$');
-            }
-            // prints a single character stored in register E
-            if (c->c == 2) {
-                printf("%c", c->e);
-            }
-        }
-
-        // uncomment following line to have a debug output of machine state
-        // warning: will output multiple GB of data for the whole test suite
-        // i8080_debug_output(c);
-
-        i8080_step(c);
-
-        if (c->pc == 0) {
-            printf("\nJumped to 0x0000 from 0x%04X\n\n", cur_pc);
-            break;
-        }
-    }
 }
 
 #undef SET_ZSP

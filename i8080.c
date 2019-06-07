@@ -17,10 +17,10 @@ static const u8 OPCODES_CYCLES[] = {
     4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,  // 9
     4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,  // A
     4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,  // B
-    5,  10, 10, 10, 11, 11, 7,  11, 5,  10, 10, 10, 11, 11, 7,  11, // C
-    5,  10, 10, 10, 11, 11, 7,  11, 5,  10, 10, 10, 11, 11, 7,  11, // D
-    5,  10, 10, 18, 11, 11, 7,  11, 5,  5,  10, 5,  11, 11, 7,  11, // E
-    5,  10, 10, 4,  11, 11, 7,  11, 5,  5,  10, 4,  11, 11, 7,  11  // F
+    5,  10, 10, 10, 11, 11, 7,  11, 5,  10, 10, 10, 11, 17, 7,  11, // C
+    5,  10, 10, 10, 11, 11, 7,  11, 5,  10, 10, 10, 11, 17, 7,  11, // D
+    5,  10, 10, 18, 11, 11, 7,  11, 5,  5,  10, 4,  11, 17, 7,  11, // E
+    5,  10, 10, 4,  11, 11, 7,  11, 5,  5,  10, 4,  11, 17, 7,  11  // F
 };
 
 #define PRINT_DISASSEMBLY_IN_DEBUG_OUTPUT 0
@@ -351,7 +351,6 @@ static inline void i8080_daa(i8080* const c) {
         cy = 1;
     }
     i8080_add(c, &c->a, correction, 0);
-    c->pf = parity(c->a);
     c->cf = cy;
 }
 
@@ -369,37 +368,15 @@ static inline void i8080_xthl(i8080* const c) {
     i8080_set_hl(c, val);
 }
 
-// initialises the emulator with default values
-void i8080_init(i8080* const c) {
-    c->pc = 0;
-    c->sp = 0;
-
-    c->a = 0;
-    c->b = 0;
-    c->c = 0;
-    c->d = 0;
-    c->e = 0;
-    c->h = 0;
-    c->l = 0;
-
-    c->sf = 0;
-    c->zf = 0;
-    c->hf = 0;
-    c->pf = 0;
-    c->cf = 0;
-    c->iff = 0;
-
-    c->cyc = 0;
-
-    c->userdata = NULL;
-    c->read_byte = NULL;
-    c->write_byte = NULL;
-}
-
-// executes one opcode stored at the address pointed by the program counter
-void i8080_step(i8080* const c) {
-    const u8 opcode = i8080_next_byte(c);
+// executes one opcode
+static inline void i8080_execute(i8080* const c, u8 opcode) {
     c->cyc += OPCODES_CYCLES[opcode];
+
+    // when DI is executed, interrupts won't be serviced
+    // until the end of next instruction:
+    if (c->interrupt_delay > 0) {
+        c->interrupt_delay -= 1;
+    }
 
     switch (opcode) {
     // 8 bit transfer instructions
@@ -570,9 +547,9 @@ void i8080_step(i8080* const c) {
 
     // control instructions
     case 0xF3: c->iff = 0; break; // DI
-    case 0xFB: c->iff = 1; break; // EI
+    case 0xFB: c->iff = 1; c->interrupt_delay = 1; break; // EI
     case 0x00: break; // NOP
-    case 0x76: c->pc -= 1; break; // HLT
+    case 0x76: c->halted = 1; break; // HLT
 
     // increment byte instructions
     case 0x3C: c->a = i8080_inr(c, c->a); break; // INR A
@@ -718,34 +695,85 @@ void i8080_step(i8080* const c) {
     case 0xF1: i8080_pop_psw(c); break; // POP PSW
 
     // input/output instructions
-    case 0xDB: break; // IN
-    case 0xD3: break; // OUT
+    case 0xDB: // IN
+        c->a = c->port_in(c->userdata, i8080_next_byte(c));
+    break;
+    case 0xD3: // OUT
+        c->port_out(c->userdata, i8080_next_byte(c), c->a);
+    break;
 
-    // undocumented nops
-    case 0x08: break;
-    case 0x10: break;
-    case 0x18: break;
-    case 0x20: break;
-    case 0x28: break;
-    case 0x30: break;
-    case 0x38: break;
+    // undocumented NOPs
+    case 0x08:
+    case 0x10: case 0x18:
+    case 0x20: case 0x28:
+    case 0x30: case 0x38:
+    break;
 
     // undocumented RET
     case 0xD9: i8080_ret(c); break;
 
-    default:
-        fprintf(stderr, "error: unknown opcode 0x%02X\n", opcode);
-        break;
+    // undocumented CALLs
+    case 0xDD: case 0xED: case 0xFD:
+        i8080_call(c, i8080_next_word(c));
+    break;
+
+    // undocumented JMP
+    case 0xCB: i8080_jmp(c, i8080_next_word(c)); break;
     }
 }
 
-// services an interrupt (a simple CALL) if the iff is true
-void i8080_interrupt(i8080* const c, const u16 addr) {
-    if (c->iff) {
+// initialises the emulator with default values
+void i8080_init(i8080* const c) {
+    c->pc = 0;
+    c->sp = 0;
+
+    c->a = 0;
+    c->b = 0;
+    c->c = 0;
+    c->d = 0;
+    c->e = 0;
+    c->h = 0;
+    c->l = 0;
+
+    c->sf = 0;
+    c->zf = 0;
+    c->hf = 0;
+    c->pf = 0;
+    c->cf = 0;
+    c->iff = 0;
+
+    c->cyc = 0;
+    c->interrupt_pending = 0;
+    c->interrupt_vector = 0;
+    c->interrupt_delay = 0;
+
+    c->userdata = NULL;
+    c->read_byte = NULL;
+    c->write_byte = NULL;
+    c->port_in = NULL;
+    c->port_out = NULL;
+}
+
+// executes one instruction
+void i8080_step(i8080* const c) {
+    // interrupt processing: if an interrupt is pending and IFF is set,
+    // we execute the interrupt vector passed by the user.
+    if (c->interrupt_pending && c->iff && c->interrupt_delay == 0) {
+        c->interrupt_pending = 0;
         c->iff = 0;
-        i8080_call(c, addr);
-        c->cyc += 11;
+        c->halted = 0;
+
+        i8080_execute(c, c->interrupt_vector);
     }
+    else if (!c->halted) {
+        i8080_execute(c, i8080_next_byte(c));
+    }
+}
+
+// asks for an interrupt to be serviced
+void i8080_interrupt(i8080* const c, u8 opcode) {
+    c->interrupt_pending = 1;
+    c->interrupt_vector = opcode;
 }
 
 // outputs a debug trace of the emulator state to the standard output,
@@ -760,15 +788,14 @@ void i8080_debug_output(i8080* const c) {
     f |= c->cf << 0;
 
     printf(
-        "PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, CYC: %d",
+        "PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, CYC: %lu",
         c->pc,
         c->a << 8 | f,
         i8080_get_bc(c),
         i8080_get_de(c),
         i8080_get_hl(c),
         c->sp,
-        c->cyc
-    );
+        c->cyc);
 
     printf("\t(%02X %02X %02X %02X)",
         i8080_rb(c, c->pc),

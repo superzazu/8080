@@ -10,16 +10,40 @@
 // memory callbacks
 #define MEMORY_SIZE 0x10000
 static u8* memory;
+static bool test_finished = 0;
 
 static u8 rb(void* userdata, const u16 addr) {
-    (void) userdata;
     return memory[addr];
 }
 
 static void wb(void* userdata, const u16 addr, const u8 val) {
-    (void) userdata;
     memory[addr] = val;
 }
+
+static u8 port_in(void* userdata, u8 port) {
+    i8080* const c = (i8080*) userdata;
+
+    u8 operation = c->c;
+
+    // print a character stored in E
+    if (operation == 2) {
+        printf("%c", c->e);
+    }
+    // print from memory at (DE) until '$' char
+    else if (operation == 9) {
+        u16 addr = (c->d << 8) | c->e;
+        do {
+            printf("%c", rb(c, addr++));
+        } while(rb(c, addr) != '$');
+    }
+
+    return 0xFF;
+}
+
+static void port_out(void* userdata, u8 port, u8 value) {
+    test_finished = 1;
+}
+
 
 static int load_file(const char* filename, u16 addr) {
     FILE* f = fopen(filename, "rb");
@@ -51,10 +75,14 @@ static int load_file(const char* filename, u16 addr) {
 
 // runs a program, handling CALL 5 call to output test results to standard
 // output
-static void run_test(i8080* const c, const char* filename) {
+static void run_test(i8080* const c, const char* filename,
+                     unsigned long cyc_expected) {
     i8080_init(c);
+    c->userdata = c;
     c->read_byte = rb;
     c->write_byte = wb;
+    c->port_in = port_in;
+    c->port_out = port_out;
     memset(memory, 0, MEMORY_SIZE);
 
     if (load_file(filename, 0x100) != 0) {
@@ -63,38 +91,33 @@ static void run_test(i8080* const c, const char* filename) {
     printf("*** TEST: %s\n", filename);
 
     c->pc = 0x100;
-    wb(c, 5, 0xC9); // inject RET at 0x5 to handle "CALL 5"
+    // inject "out 1,a" at 0x0000 (signal to stop the test)
+    memory[0x0000] = 0xD3;
+    memory[0x0001] = 0x00;
 
-    while (1) {
-        u16 cur_pc = c->pc;
+    // inject "in a,0" at 0x0005 (signal to output some characters)
+    memory[0x0005] = 0xDB;
+    memory[0x0006] = 0x00;
+    memory[0x0007] = 0xC9;
 
-        if (c->pc == 5) {
-            // prints characters stored in memory at (DE) until '$' is found
-            if (c->c == 9) {
-                u16 i = (c->d << 8) | c->e;
-                do {
-                    printf("%c", rb(c, i));
-                    i += 1;
-                } while (rb(c, i) != '$');
-            }
-            // prints a single character stored in register E
-            if (c->c == 2) {
-                printf("%c", c->e);
-            }
-        }
+    long nb_instructions = 0;
+
+    test_finished = 0;
+    while (!test_finished) {
+        nb_instructions += 1;
 
         // uncomment following line to have a debug output of machine state
         // warning: will output multiple GB of data for the whole test suite
         // i8080_debug_output(c);
 
         i8080_step(c);
-
-        if (c->pc == 0) {
-            printf("\nJumped to 0x0000 from 0x%04X (%d cycles)\n\n",
-                cur_pc, c->cyc);
-            break;
-        }
     }
+
+    long long diff = cyc_expected - c->cyc;
+    printf("\n*** %lu instructions executed on %lu cycles"
+        " (expected=%lu, diff=%lld)\n\n",
+        nb_instructions, c->cyc,
+        cyc_expected, diff);
 }
 
 int main(void) {
@@ -104,10 +127,10 @@ int main(void) {
     }
 
     i8080 cpu;
-    run_test(&cpu, "cpu_tests/TST8080.COM");
-    run_test(&cpu, "cpu_tests/CPUTEST.COM");
-    run_test(&cpu, "cpu_tests/8080PRE.COM");
-    run_test(&cpu, "cpu_tests/8080EXM.COM");
+    run_test(&cpu, "cpu_tests/TST8080.COM", 4924LU);
+    run_test(&cpu, "cpu_tests/CPUTEST.COM", 255653383LU);
+    run_test(&cpu, "cpu_tests/8080PRE.COM", 7817LU);
+    run_test(&cpu, "cpu_tests/8080EXM.COM", 23803381171LU);
 
     free(memory);
 

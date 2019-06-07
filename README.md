@@ -25,7 +25,7 @@ MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
  VERSION 1.0  (C) 1980
 
  CPU IS OPERATIONAL
-Jumped to 0x0000 from 0x06BA (4873 cycles)
+*** 651 instructions executed on 4924 cycles (expected=4924, diff=0)
 
 *** TEST: cpu_tests/CPUTEST.COM
 
@@ -38,11 +38,11 @@ BEGIN TIMING TEST
 END TIMING TEST
 CPU TESTS OK
 
-Jumped to 0x0000 from 0x3B25 (255573237 cycles)
+*** 33971311 instructions executed on 255653383 cycles (expected=255653383, diff=0)
 
 *** TEST: cpu_tests/8080PRE.COM
 8080 Preliminary tests complete
-Jumped to 0x0000 from 0x032F (7785 cycles)
+*** 1061 instructions executed on 7817 cycles (expected=7817, diff=0)
 
 *** TEST: cpu_tests/8080EXM.COM
 8080 instruction exerciser
@@ -72,7 +72,7 @@ sta nnnn / lda nnnn...........  PASS! crc is:ed57af72
 <rlc,rrc,ral,rar>.............  PASS! crc is:e0d89235
 stax <b,d>....................  PASS! crc is:2b0471e9
 Tests complete
-Jumped to 0x0000 from 0x0137 (2138633954 cycles)
+*** 2919050698 instructions executed on 23803381171 cycles (expected=23803381171, diff=0)
 
 ```
 

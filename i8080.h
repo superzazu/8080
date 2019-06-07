@@ -16,17 +16,23 @@ typedef struct i8080 {
     bool sf, zf, hf, pf, cf, iff; // flags: sign, zero, half-carry, parity,
                                   // carry, interrupt flip-flop
 
-    int cyc; // cycle count
+    unsigned long cyc; // cycle count
+    bool halted;
+    bool interrupt_pending;
+    u8 interrupt_vector;
+    u8 interrupt_delay;
 
-    // function pointers to access memory
+    // memory + io interface
     void* userdata; // general purpose pointer for the user
     u8 (*read_byte)(void*, u16);
     void (*write_byte)(void*, u16, u8);
+    u8 (*port_in)(void*, u8);
+    void (*port_out)(void*, u8, u8);
 } i8080;
 
 void i8080_init(i8080* const c);
 void i8080_step(i8080* const c);
-void i8080_interrupt(i8080* const c, const u16 addr);
+void i8080_interrupt(i8080* const c, u8 opcode);
 void i8080_debug_output(i8080* const c);
 
 #endif  // I8080_I8080_H_

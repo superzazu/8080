@@ -9,21 +9,21 @@
 
 // memory callbacks
 #define MEMORY_SIZE 0x10000
-static u8* memory;
+static uint8_t* memory = NULL;
 static bool test_finished = 0;
 
-static u8 rb(void* userdata, const u16 addr) {
+static uint8_t rb(void* userdata, const uint16_t addr) {
     return memory[addr];
 }
 
-static void wb(void* userdata, const u16 addr, const u8 val) {
+static void wb(void* userdata, const uint16_t addr, const uint8_t val) {
     memory[addr] = val;
 }
 
-static u8 port_in(void* userdata, u8 port) {
+static uint8_t port_in(void* userdata, uint8_t port) {
     i8080* const c = (i8080*) userdata;
 
-    u8 operation = c->c;
+    uint8_t operation = c->c;
 
     // print a character stored in E
     if (operation == 2) {
@@ -31,7 +31,7 @@ static u8 port_in(void* userdata, u8 port) {
     }
     // print from memory at (DE) until '$' char
     else if (operation == 9) {
-        u16 addr = (c->d << 8) | c->e;
+        uint16_t addr = (c->d << 8) | c->e;
         do {
             printf("%c", rb(c, addr++));
         } while(rb(c, addr) != '$');
@@ -40,12 +40,12 @@ static u8 port_in(void* userdata, u8 port) {
     return 0xFF;
 }
 
-static void port_out(void* userdata, u8 port, u8 value) {
+static void port_out(void* userdata, uint8_t port, uint8_t value) {
     test_finished = 1;
 }
 
 
-static int load_file(const char* filename, u16 addr) {
+static int load_file(const char* filename, uint16_t addr) {
     FILE* f = fopen(filename, "rb");
     if (f == NULL) {
         fprintf(stderr, "error: can't open file '%s'.\n", filename);
@@ -63,7 +63,7 @@ static int load_file(const char* filename, u16 addr) {
     }
 
     // copying the bytes in memory:
-    size_t result = fread(&memory[addr], sizeof(u8), file_size, f);
+    size_t result = fread(&memory[addr], sizeof(uint8_t), file_size, f);
     if (result != file_size) {
         fprintf(stderr, "error: while reading file '%s'\n", filename);
         return 1;
@@ -121,7 +121,7 @@ static void run_test(i8080* const c, const char* filename,
 }
 
 int main(void) {
-    memory = malloc(MEMORY_SIZE * sizeof(u8));
+    memory = malloc(MEMORY_SIZE);
     if (memory == NULL) {
         return 1;
     }

@@ -748,6 +748,7 @@ void i8080_init(i8080* const c) {
     c->interrupt_pending = 0;
     c->interrupt_vector = 0;
     c->interrupt_delay = 0;
+    c->halted = 0;
 
     c->userdata = NULL;
     c->read_byte = NULL;

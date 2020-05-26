@@ -1,0 +1,12 @@
+BasedOnStyle: llvm
+SortIncludes: false
+PointerAlignment: Left
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: false
+AlignEscapedNewlines: DontAlign
+AlignAfterOpenBracket: DontAlign
+SpaceAfterCStyleCast: true
+AlignTrailingComments: false

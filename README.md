@@ -6,6 +6,8 @@ A complete emulation of the Intel 8080 processor written in C99. Goals:
 - readability
 - portability: tested on debian 8 with gcc 5, macOS 10.12+ with clang and emscripten 1.39
 
+You can see it in action in my [Space Invaders emulator](https://github.com/superzazu/invaders).
+
 ## Running tests
 
 You can run the tests by running `make && ./i8080_tests`. The emulator passes the following tests:

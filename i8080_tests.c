@@ -21,24 +21,26 @@ static void wb(void* userdata, uint16_t addr, uint8_t val) {
 }
 
 static uint8_t port_in(void* userdata, uint8_t port) {
-  i8080* const c = (i8080*) userdata;
-
-  uint8_t operation = c->c;
-
-  if (operation == 2) { // print a character stored in E
-    printf("%c", c->e);
-  } else if (operation == 9) { // print from memory at (DE) until '$' char
-    uint16_t addr = (c->d << 8) | c->e;
-    do {
-      printf("%c", rb(c, addr++));
-    } while (rb(c, addr) != '$');
-  }
-
-  return 0xFF;
+  return 0x00;
 }
 
 static void port_out(void* userdata, uint8_t port, uint8_t value) {
-  test_finished = 1;
+  i8080* const c = (i8080*) userdata;
+
+  if (port == 0) {
+    test_finished = 1;
+  } else if (port == 1) {
+    uint8_t operation = c->c;
+
+    if (operation == 2) { // print a character stored in E
+      printf("%c", c->e);
+    } else if (operation == 9) { // print from memory at (DE) until '$' char
+      uint16_t addr = (c->d << 8) | c->e;
+      do {
+        printf("%c", rb(c, addr++));
+      } while (rb(c, addr) != '$');
+    }
+  }
 }
 
 static inline int load_file(const char* filename, uint16_t addr) {
@@ -69,8 +71,6 @@ static inline int load_file(const char* filename, uint16_t addr) {
   return 0;
 }
 
-// runs a program, handling CALL 5 call to output test results to standard
-// output
 static inline void run_test(
     i8080* const c, const char* filename, unsigned long cyc_expected) {
   i8080_init(c);
@@ -88,13 +88,13 @@ static inline void run_test(
 
   c->pc = 0x100;
 
-  // inject "out 1,a" at 0x0000 (signal to stop the test)
+  // inject "out 0,a" at 0x0000 (signal to stop the test)
   memory[0x0000] = 0xD3;
   memory[0x0001] = 0x00;
 
-  // inject "in a,0" at 0x0005 (signal to output some characters)
-  memory[0x0005] = 0xDB;
-  memory[0x0006] = 0x00;
+  // inject "out 1,a" at 0x0005 (signal to output some characters)
+  memory[0x0005] = 0xD3;
+  memory[0x0006] = 0x01;
   memory[0x0007] = 0xC9;
 
   long nb_instructions = 0;

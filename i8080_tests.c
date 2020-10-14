@@ -123,10 +123,10 @@ int main(void) {
   }
 
   i8080 cpu;
-  run_test(&cpu, "cpu_tests/TST8080.com", 4924LU);
-  run_test(&cpu, "cpu_tests/CPUTEST.com", 255653383LU);
-  run_test(&cpu, "cpu_tests/8080PRE.com", 7817LU);
-  run_test(&cpu, "cpu_tests/8080EXM.com", 23803381171LU);
+  run_test(&cpu, "cpu_tests/TST8080.COM", 4924LU);
+  run_test(&cpu, "cpu_tests/CPUTEST.COM", 255653383LU);
+  run_test(&cpu, "cpu_tests/8080PRE.COM", 7817LU);
+  run_test(&cpu, "cpu_tests/8080EXM.COM", 23803381171LU);
 
   free(memory);
 

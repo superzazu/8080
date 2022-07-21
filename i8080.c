@@ -25,15 +25,16 @@ static const uint8_t OPCODES_CYCLES[256] = {
 };
 // clang-format on
 
-static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,#", "stax b", "inx b",
-    "inr b", "dcr b", "mvi b,#", "rlc", "ill", "dad b", "ldax b", "dcx b",
-    "inr c", "dcr c", "mvi c,#", "rrc", "ill", "lxi d,#", "stax d", "inx d",
-    "inr d", "dcr d", "mvi d,#", "ral", "ill", "dad d", "ldax d", "dcx d",
-    "inr e", "dcr e", "mvi e,#", "rar", "ill", "lxi h,#", "shld", "inx h",
-    "inr h", "dcr h", "mvi h,#", "daa", "ill", "dad h", "lhld", "dcx h",
-    "inr l", "dcr l", "mvi l,#", "cma", "ill", "lxi sp,#", "sta $", "inx sp",
-    "inr M", "dcr M", "mvi M,#", "stc", "ill", "dad sp", "lda $", "dcx sp",
-    "inr a", "dcr a", "mvi a,#", "cmc", "mov b,b", "mov b,c", "mov b,d",
+// %hu means a 16-bit immediate operand, %hhu is 8-bit.
+static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,%hu", "stax b", "inx b",
+    "inr b", "dcr b", "mvi b,%hhu", "rlc", "ill", "dad b", "ldax b", "dcx b",
+    "inr c", "dcr c", "mvi c,%hhu", "rrc", "ill", "lxi d,%hu", "stax d", "inx d",
+    "inr d", "dcr d", "mvi d,%hhu", "ral", "ill", "dad d", "ldax d", "dcx d",
+    "inr e", "dcr e", "mvi e,%hhu", "rar", "ill", "lxi h,%hu", "shld", "inx h",
+    "inr h", "dcr h", "mvi h,%hhu", "daa", "ill", "dad h", "lhld", "dcx h",
+    "inr l", "dcr l", "mvi l,%hhu", "cma", "ill", "lxi sp,%hu", "sta %hu", "inx sp",
+    "inr M", "dcr M", "mvi M,%hhu", "stc", "ill", "dad sp", "lda %hu", "dcx sp",
+    "inr a", "dcr a", "mvi a,%hhu", "cmc", "mov b,b", "mov b,c", "mov b,d",
     "mov b,e", "mov b,h", "mov b,l", "mov b,M", "mov b,a", "mov c,b", "mov c,c",
     "mov c,d", "mov c,e", "mov c,h", "mov c,l", "mov c,M", "mov c,a", "mov d,b",
     "mov d,c", "mov d,d", "mov d,e", "mov d,h", "mov d,l", "mov d,M", "mov d,a",
@@ -51,13 +52,13 @@ static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,#", "stax b", "inx b",
     "xra d", "xra e", "xra h", "xra l", "xra M", "xra a", "ora b", "ora c",
     "ora d", "ora e", "ora h", "ora l", "ora M", "ora a", "cmp b", "cmp c",
     "cmp d", "cmp e", "cmp h", "cmp l", "cmp M", "cmp a", "rnz", "pop b",
-    "jnz $", "jmp $", "cnz $", "push b", "adi #", "rst 0", "rz", "ret", "jz $",
-    "ill", "cz $", "call $", "aci #", "rst 1", "rnc", "pop d", "jnc $", "out p",
-    "cnc $", "push d", "sui #", "rst 2", "rc", "ill", "jc $", "in p", "cc $",
-    "ill", "sbi #", "rst 3", "rpo", "pop h", "jpo $", "xthl", "cpo $", "push h",
-    "ani #", "rst 4", "rpe", "pchl", "jpe $", "xchg", "cpe $", "ill", "xri #",
-    "rst 5", "rp", "pop psw", "jp $", "di", "cp $", "push psw", "ori #",
-    "rst 6", "rm", "sphl", "jm $", "ei", "cm $", "ill", "cpi #", "rst 7"};
+    "jnz %hu", "jmp %hu", "cnz %hu", "push b", "adi %hhu", "rst 0", "rz", "ret", "jz %hu",
+    "ill", "cz %hu", "call %hu", "aci %hhu", "rst 1", "rnc", "pop d", "jnc %hu", "out p",
+    "cnc %hu", "push d", "sui %hhu", "rst 2", "rc", "ill", "jc %hu", "in p", "cc %hu",
+    "ill", "sbi %hhu", "rst 3", "rpo", "pop h", "jpo %hu", "xthl", "cpo %hu", "push h",
+    "ani %hhu", "rst 4", "rpe", "pchl", "jpe %hu", "xchg", "cpe %hu", "ill", "xri %hhu",
+    "rst 5", "rp", "pop psw", "jp %hu", "di", "cp %hu", "push psw", "ori %hhu",
+    "rst 6", "rm", "sphl", "jm %hu", "ei", "cm %hu", "ill", "cpi %hhu", "rst 7"};
 
 #define SET_ZSP(c, val) \
   do { \
@@ -773,7 +774,22 @@ void i8080_debug_output(i8080* const c, bool print_disassembly) {
       i8080_rb(c, c->pc + 2), i8080_rb(c, c->pc + 3));
 
   if (print_disassembly) {
-    printf(" - %s", DISASSEMBLE_TABLE[i8080_rb(c, c->pc)]);
+    const char* fmt = DISASSEMBLE_TABLE[i8080_rb(c, c->pc)];
+
+    printf(" - ");
+
+    // check for immediate operands
+    if (strstr(fmt, "%hhu")) { // 8-bit
+      printf(fmt, i8080_rb(c, c->pc + 1));
+
+    } else if (strstr(fmt, "%hu")) { // 16-bit
+      const uint8_t low_byte = i8080_rb(c, c->pc + 1);
+      const uint8_t high_byte = i8080_rb(c, c->pc + 2);
+      printf(fmt, (high_byte << 8) + low_byte);
+
+    } else { // no immediates
+      printf(fmt);
+    }
   }
 
   printf("\n");

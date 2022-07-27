@@ -25,15 +25,16 @@ static const uint8_t OPCODES_CYCLES[256] = {
 };
 // clang-format on
 
-static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,#", "stax b", "inx b",
-    "inr b", "dcr b", "mvi b,#", "rlc", "ill", "dad b", "ldax b", "dcx b",
-    "inr c", "dcr c", "mvi c,#", "rrc", "ill", "lxi d,#", "stax d", "inx d",
-    "inr d", "dcr d", "mvi d,#", "ral", "ill", "dad d", "ldax d", "dcx d",
-    "inr e", "dcr e", "mvi e,#", "rar", "ill", "lxi h,#", "shld", "inx h",
-    "inr h", "dcr h", "mvi h,#", "daa", "ill", "dad h", "lhld", "dcx h",
-    "inr l", "dcr l", "mvi l,#", "cma", "ill", "lxi sp,#", "sta $", "inx sp",
-    "inr M", "dcr M", "mvi M,#", "stc", "ill", "dad sp", "lda $", "dcx sp",
-    "inr a", "dcr a", "mvi a,#", "cmc", "mov b,b", "mov b,c", "mov b,d",
+// %04X means a 16-bit immediate operand, %02X is 8-bit.
+static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,%04XH", "stax b", "inx b",
+    "inr b", "dcr b", "mvi b,%02XH", "rlc", "ill", "dad b", "ldax b", "dcx b",
+    "inr c", "dcr c", "mvi c,%02XH", "rrc", "ill", "lxi d,%04XH", "stax d", "inx d",
+    "inr d", "dcr d", "mvi d,%02XH", "ral", "ill", "dad d", "ldax d", "dcx d",
+    "inr e", "dcr e", "mvi e,%02XH", "rar", "ill", "lxi h,%04XH", "shld", "inx h",
+    "inr h", "dcr h", "mvi h,%02XH", "daa", "ill", "dad h", "lhld", "dcx h",
+    "inr l", "dcr l", "mvi l,%02XH", "cma", "ill", "lxi sp,%04XH", "sta %04XH", "inx sp",
+    "inr M", "dcr M", "mvi M,%02XH", "stc", "ill", "dad sp", "lda %04XH", "dcx sp",
+    "inr a", "dcr a", "mvi a,%02XH", "cmc", "mov b,b", "mov b,c", "mov b,d",
     "mov b,e", "mov b,h", "mov b,l", "mov b,M", "mov b,a", "mov c,b", "mov c,c",
     "mov c,d", "mov c,e", "mov c,h", "mov c,l", "mov c,M", "mov c,a", "mov d,b",
     "mov d,c", "mov d,d", "mov d,e", "mov d,h", "mov d,l", "mov d,M", "mov d,a",
@@ -51,13 +52,13 @@ static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,#", "stax b", "inx b",
     "xra d", "xra e", "xra h", "xra l", "xra M", "xra a", "ora b", "ora c",
     "ora d", "ora e", "ora h", "ora l", "ora M", "ora a", "cmp b", "cmp c",
     "cmp d", "cmp e", "cmp h", "cmp l", "cmp M", "cmp a", "rnz", "pop b",
-    "jnz $", "jmp $", "cnz $", "push b", "adi #", "rst 0", "rz", "ret", "jz $",
-    "ill", "cz $", "call $", "aci #", "rst 1", "rnc", "pop d", "jnc $", "out p",
-    "cnc $", "push d", "sui #", "rst 2", "rc", "ill", "jc $", "in p", "cc $",
-    "ill", "sbi #", "rst 3", "rpo", "pop h", "jpo $", "xthl", "cpo $", "push h",
-    "ani #", "rst 4", "rpe", "pchl", "jpe $", "xchg", "cpe $", "ill", "xri #",
-    "rst 5", "rp", "pop psw", "jp $", "di", "cp $", "push psw", "ori #",
-    "rst 6", "rm", "sphl", "jm $", "ei", "cm $", "ill", "cpi #", "rst 7"};
+    "jnz %04XH", "jmp %04XH", "cnz %04XH", "push b", "adi %02XH", "rst 0", "rz", "ret", "jz %04XH",
+    "ill", "cz %04XH", "call %04X", "aci %02XH", "rst 1", "rnc", "pop d", "jnc %04XH", "out p",
+    "cnc %04XH", "push d", "sui %02XH", "rst 2", "rc", "ill", "jc %04XH", "in p", "cc %04XH",
+    "ill", "sbi %02XH", "rst 3", "rpo", "pop h", "jpo %04XH", "xthl", "cpo %04XH", "push h",
+    "ani %02XH", "rst 4", "rpe", "pchl", "jpe %04X", "xchg", "cpe %04XH", "ill", "xri %02XH",
+    "rst 5", "rp", "pop psw", "jp %04XH", "di", "cp %04XH", "push psw", "ori %02XH",
+    "rst 6", "rm", "sphl", "jm %04XH", "ei", "cm %04XH", "ill", "cpi %02XH", "rst 7"};
 
 #define SET_ZSP(c, val) \
   do { \
@@ -773,7 +774,22 @@ void i8080_debug_output(i8080* const c, bool print_disassembly) {
       i8080_rb(c, c->pc + 2), i8080_rb(c, c->pc + 3));
 
   if (print_disassembly) {
-    printf(" - %s", DISASSEMBLE_TABLE[i8080_rb(c, c->pc)]);
+    const char* fmt = DISASSEMBLE_TABLE[i8080_rb(c, c->pc)];
+
+    printf(" - ");
+
+    // check for immediate operands
+    if (strstr(fmt, "%02X")) { // 8-bit
+      printf(fmt, i8080_rb(c, c->pc + 1));
+
+    } else if (strstr(fmt, "%04X")) { // 16-bit
+      const uint8_t low_byte = i8080_rb(c, c->pc + 1);
+      const uint8_t high_byte = i8080_rb(c, c->pc + 2);
+      printf(fmt, (high_byte << 8) + low_byte);
+
+    } else { // no immediates
+      printf("%s", fmt);
+    }
   }
 
   printf("\n");

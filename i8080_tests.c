@@ -105,7 +105,7 @@ static inline void run_test(
 
     // uncomment following line to have a debug output of machine state
     // warning: will output multiple GB of data for the whole test suite
-    // i8080_debug_output(c, false);
+    //i8080_debug_output(c, false);
 
     i8080_step(c);
   }

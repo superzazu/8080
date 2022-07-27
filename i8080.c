@@ -25,16 +25,16 @@ static const uint8_t OPCODES_CYCLES[256] = {
 };
 // clang-format on
 
-// %hu means a 16-bit immediate operand, %hhu is 8-bit.
-static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,%hu", "stax b", "inx b",
-    "inr b", "dcr b", "mvi b,%hhu", "rlc", "ill", "dad b", "ldax b", "dcx b",
-    "inr c", "dcr c", "mvi c,%hhu", "rrc", "ill", "lxi d,%hu", "stax d", "inx d",
-    "inr d", "dcr d", "mvi d,%hhu", "ral", "ill", "dad d", "ldax d", "dcx d",
-    "inr e", "dcr e", "mvi e,%hhu", "rar", "ill", "lxi h,%hu", "shld", "inx h",
-    "inr h", "dcr h", "mvi h,%hhu", "daa", "ill", "dad h", "lhld", "dcx h",
-    "inr l", "dcr l", "mvi l,%hhu", "cma", "ill", "lxi sp,%hu", "sta %hu", "inx sp",
-    "inr M", "dcr M", "mvi M,%hhu", "stc", "ill", "dad sp", "lda %hu", "dcx sp",
-    "inr a", "dcr a", "mvi a,%hhu", "cmc", "mov b,b", "mov b,c", "mov b,d",
+// %04X means a 16-bit immediate operand, %02X is 8-bit.
+static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,%04XH", "stax b", "inx b",
+    "inr b", "dcr b", "mvi b,%02XH", "rlc", "ill", "dad b", "ldax b", "dcx b",
+    "inr c", "dcr c", "mvi c,%02XH", "rrc", "ill", "lxi d,%04XH", "stax d", "inx d",
+    "inr d", "dcr d", "mvi d,%02XH", "ral", "ill", "dad d", "ldax d", "dcx d",
+    "inr e", "dcr e", "mvi e,%02XH", "rar", "ill", "lxi h,%04XH", "shld", "inx h",
+    "inr h", "dcr h", "mvi h,%02XH", "daa", "ill", "dad h", "lhld", "dcx h",
+    "inr l", "dcr l", "mvi l,%02XH", "cma", "ill", "lxi sp,%04XH", "sta %04XH", "inx sp",
+    "inr M", "dcr M", "mvi M,%02XH", "stc", "ill", "dad sp", "lda %04XH", "dcx sp",
+    "inr a", "dcr a", "mvi a,%02XH", "cmc", "mov b,b", "mov b,c", "mov b,d",
     "mov b,e", "mov b,h", "mov b,l", "mov b,M", "mov b,a", "mov c,b", "mov c,c",
     "mov c,d", "mov c,e", "mov c,h", "mov c,l", "mov c,M", "mov c,a", "mov d,b",
     "mov d,c", "mov d,d", "mov d,e", "mov d,h", "mov d,l", "mov d,M", "mov d,a",
@@ -52,13 +52,13 @@ static const char* DISASSEMBLE_TABLE[] = {"nop", "lxi b,%hu", "stax b", "inx b",
     "xra d", "xra e", "xra h", "xra l", "xra M", "xra a", "ora b", "ora c",
     "ora d", "ora e", "ora h", "ora l", "ora M", "ora a", "cmp b", "cmp c",
     "cmp d", "cmp e", "cmp h", "cmp l", "cmp M", "cmp a", "rnz", "pop b",
-    "jnz %hu", "jmp %hu", "cnz %hu", "push b", "adi %hhu", "rst 0", "rz", "ret", "jz %hu",
-    "ill", "cz %hu", "call %hu", "aci %hhu", "rst 1", "rnc", "pop d", "jnc %hu", "out p",
-    "cnc %hu", "push d", "sui %hhu", "rst 2", "rc", "ill", "jc %hu", "in p", "cc %hu",
-    "ill", "sbi %hhu", "rst 3", "rpo", "pop h", "jpo %hu", "xthl", "cpo %hu", "push h",
-    "ani %hhu", "rst 4", "rpe", "pchl", "jpe %hu", "xchg", "cpe %hu", "ill", "xri %hhu",
-    "rst 5", "rp", "pop psw", "jp %hu", "di", "cp %hu", "push psw", "ori %hhu",
-    "rst 6", "rm", "sphl", "jm %hu", "ei", "cm %hu", "ill", "cpi %hhu", "rst 7"};
+    "jnz %04XH", "jmp %04XH", "cnz %04XH", "push b", "adi %02XH", "rst 0", "rz", "ret", "jz %04XH",
+    "ill", "cz %04XH", "call %04X", "aci %02XH", "rst 1", "rnc", "pop d", "jnc %04XH", "out p",
+    "cnc %04XH", "push d", "sui %02XH", "rst 2", "rc", "ill", "jc %04XH", "in p", "cc %04XH",
+    "ill", "sbi %02XH", "rst 3", "rpo", "pop h", "jpo %04XH", "xthl", "cpo %04XH", "push h",
+    "ani %02XH", "rst 4", "rpe", "pchl", "jpe %04X", "xchg", "cpe %04XH", "ill", "xri %02XH",
+    "rst 5", "rp", "pop psw", "jp %04XH", "di", "cp %04XH", "push psw", "ori %02XH",
+    "rst 6", "rm", "sphl", "jm %04XH", "ei", "cm %04XH", "ill", "cpi %02XH", "rst 7"};
 
 #define SET_ZSP(c, val) \
   do { \
@@ -779,16 +779,16 @@ void i8080_debug_output(i8080* const c, bool print_disassembly) {
     printf(" - ");
 
     // check for immediate operands
-    if (strstr(fmt, "%hhu")) { // 8-bit
+    if (strstr(fmt, "%02X")) { // 8-bit
       printf(fmt, i8080_rb(c, c->pc + 1));
 
-    } else if (strstr(fmt, "%hu")) { // 16-bit
+    } else if (strstr(fmt, "%04X")) { // 16-bit
       const uint8_t low_byte = i8080_rb(c, c->pc + 1);
       const uint8_t high_byte = i8080_rb(c, c->pc + 2);
       printf(fmt, (high_byte << 8) + low_byte);
 
     } else { // no immediates
-      printf(fmt);
+      printf("%s", fmt);
     }
   }
 
